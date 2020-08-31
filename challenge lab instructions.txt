@@ -1,0 +1,44 @@
+# Steps required to complete this lab:
+
+1) Create SQL instance
+   --> gclod gui --> SQL --> create instance --> MySQL
+   --> Fill out name (lab306) and password fields
+   --> create
+
+2) Backup existing db and copy it to storage
+   --> gcloud UI --> compute engine --> vm instances
+   --> blog (vm instance) --> SSH
+   --> mysqldump --databases wordpress -h localhost -u blogadmin -p \
+       --hex-blob --skip-triggers --single-transaction \
+       --default-character-set=utf8mb4 > wordpress.sql
+   --> export PROJECT_ID=$(gcloud info --format='value(config.project)')
+   --> gsutil mb gs://${PROJECT_ID}
+   --> gsutil cp ~/wordpress.sql gs://${PROJECT_ID}
+
+3) Import backed up db to Cloud SQL
+   --> gcloud ui --> SQL --> verify MySQL db from step 1 is created
+   --> Click lab306 (db instance) --> databases --> create database
+   --> db name: wordpress
+   --> characterset: utf8mb4
+   --> Click Create
+   --> Click Overview
+   --> CLick Import
+   --> Source: Browse to backed up db file in cloud storage bucket
+   --> Destination: Select wordpress db
+   --> Click Import
+
+4) Blog instance needs to access cloud sql instance
+   --> gcloud ui --> SQL --> Users --> add user account
+   --> User Name: blogadmin
+   --> Password: Password1*
+   --> add
+   --> Select Connections (from Master Instance Panel)
+   --> Public IP --> Edit Network --> Name: blog --> Network: 35.225.74.0/24
+   --> Done + Save
+
+5) wp-config.php needs to point to Cloud SQL instance
+   --> gcloud ui --> compute instances --> vm --> blog --> SSH
+   --> cd /var/www/html/wordpress
+   --> vi wp-config.php
+   --> replace 'localhost' with 'public IP address of cloud SQL instance'
+   --> ESC --> :wq
